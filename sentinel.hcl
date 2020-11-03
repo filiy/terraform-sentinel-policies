@@ -1,26 +1,31 @@
-# This policy uses the Sentinel tfplan/v2 import to require that
-# all Azure VMs have vm sizes from an allowed list
+module "tfplan-functions" {
+    source = "../common-functions/tfplan-functions/tfplan-functions.sentinel"
+}
 
-# Import common-functions/tfplan-functions/tfplan-functions.sentinel
-# with alias "plan"
-import "tfplan-functions" as plan
+module "tfstate-functions" {
+    source = "../common-functions/tfstate-functions/tfstate-functions.sentinel"
+}
 
-# Allowed Azure VM Sizes
-# Include "null" to allow missing or computed values
-allowed_sizes = ["Standard_A1", "Standard_A2", "Standard_D8s_v3", "Standard_D2_v2"]
+module "tfconfig-functions" {
+    source = "../common-functions/tfconfig-functions/tfconfig-functions.sentinel"
+}
 
-# Get all Azure VMs
-allAzureVMs = plan.find_resources("azurerm_virtual_machine")
+policy "enforce-mandatory-tags" {
+    source = "./enforce-mandatory-tags.sentinel"
+    enforcement_level = "advisory"
+}
 
-# Filter to Azure VMs with violations
-# Warnings will be printed for all violations since the last parameter is true
-violatingAzureVMs = plan.filter_attribute_not_in_list(allAzureVMs,
-                    "vm_size", allowed_sizes, true)
+policy "restrict-app-service-to-https" {
+    source = "./restrict-app-service-to-https.sentinel"
+    enforcement_level = "advisory"
+}
 
-# Count violations
-violations = length(violatingAzureVMs["messages"])
+policy "restrict-publishers-of-current-vms" {
+    source = "./restrict-publishers-of-current-vms.sentinel"
+    enforcement_level = "advisory"
+}
 
-# Main rule
-main = rule {
-  violations is 0
+policy "restrict-vm-size" {
+    source = "./restrict-vm-size.sentinel"
+    enforcement_level = "advisory"
 }
